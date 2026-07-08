@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=77.0.3", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ranking-feature-selector"
+version = "0.4.3"
+description = "Leakage-safe nested-CV feature selection for small tabular classification, regression, and survival analysis."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+  {name = "ranking-feature-selector contributors"}
+]
+keywords = [
+  "feature-selection",
+  "permutation-importance",
+  "nested-cross-validation",
+  "stability-selection",
+  "tabular-data",
+  "survival-analysis",
+  "machine-learning"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Healthcare Industry",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+dependencies = [
+  "numpy>=1.22",
+  "pandas>=1.5",
+  "scikit-learn>=1.1",
+]
+
+[project.optional-dependencies]
+shap = ["shap>=0.41"]
+imbalance = ["imbalanced-learn>=0.10"]
+lightgbm = ["lightgbm>=3.3"]
+xgboost = ["xgboost>=1.7"]
+catboost = ["catboost>=1.1"]
+survival = ["scikit-survival>=0.22"]
+dev = ["pytest>=7", "ruff>=0.4", "build>=1.0", "twine>=4"]
+all = [
+  "shap>=0.41",
+  "imbalanced-learn>=0.10",
+  "lightgbm>=3.3",
+  "xgboost>=1.7",
+  "catboost>=1.1",
+  "scikit-survival>=0.22",
+]
+
+[project.urls]
+Homepage = "https://github.com/rik-yosh/ranking-feature-selector"
+Repository = "https://github.com/rik-yosh/ranking-feature-selector"
+Issues = "https://github.com/rik-yosh/ranking-feature-selector/issues"
+Changelog = "https://github.com/rik-yosh/ranking-feature-selector/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
