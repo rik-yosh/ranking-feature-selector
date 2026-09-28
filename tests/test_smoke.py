@@ -312,3 +312,54 @@ def test_backward_compatible_import_aliases():
 
     assert robust_feature_selector.RobustFeatureSelectorCV is RobustFeatureSelectorCV
     assert robust_shap_selector.RobustFeatureSelectorCV is RobustFeatureSelectorCV
+
+
+def test_make_k_grid_is_dense_for_small_searches_and_sparse_for_large_searches():
+    from ranking_feature_selector import make_k_grid
+
+    assert make_k_grid(12) == list(range(1, 13))
+    assert make_k_grid(100, max_k=20) == list(range(1, 21))
+
+    grid_60 = make_k_grid(100, max_k=60)
+    assert grid_60[0] == 1
+    assert grid_60[-1] == 60
+    assert 20 in grid_60
+    assert 25 in grid_60
+    assert len(grid_60) < 30
+
+    grid_100 = make_k_grid(100)
+    assert grid_100[-1] == 100
+    assert 70 in grid_100
+    assert len(grid_100) < 40
+
+
+def test_selection_model_params_are_applied_without_changing_final_model():
+    X_np, y_np = make_regression(
+        n_samples=40,
+        n_features=6,
+        n_informative=3,
+        random_state=21,
+    )
+    X = pd.DataFrame(X_np, columns=[f"x{i}" for i in range(X_np.shape[1])])
+    y = pd.Series(y_np)
+    model = RandomForestRegressor(n_estimators=12, random_state=21, min_samples_leaf=2)
+
+    selector = RobustRegressionFeatureSelectorCV(
+        model=model,
+        max_features=2,
+        preset="fast",
+        selection_config={
+            "k_grid": [1, 2],
+            "selection_model_params": {"n_estimators": 3},
+        },
+        importance_config={"method": "permutation", "n_repeats": 1},
+        random_state=21,
+        verbose=False,
+    )
+    selector.fit(X, y)
+
+    assert selector.result_.config["selection_config"]["selection_model_params"] == {
+        "n_estimators": 3
+    }
+    fitted = selector.fit_final_model(X, y)
+    assert fitted.model.n_estimators == 12
