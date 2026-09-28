@@ -312,3 +312,22 @@ def test_backward_compatible_import_aliases():
 
     assert robust_feature_selector.RobustFeatureSelectorCV is RobustFeatureSelectorCV
     assert robust_shap_selector.RobustFeatureSelectorCV is RobustFeatureSelectorCV
+
+
+def test_make_k_grid_is_dense_for_small_searches_and_sparse_for_large_searches():
+    from ranking_feature_selector import make_k_grid
+
+    assert make_k_grid(12) == list(range(1, 13))
+    assert make_k_grid(100, max_k=20) == list(range(1, 21))
+
+    grid_60 = make_k_grid(100, max_k=60)
+    assert grid_60[0] == 1
+    assert grid_60[-1] == 60
+    assert 20 in grid_60
+    assert 25 in grid_60
+    assert len(grid_60) < 30
+
+    grid_100 = make_k_grid(100)
+    assert grid_100[-1] == 100
+    assert 70 in grid_100
+    assert len(grid_100) < 40
