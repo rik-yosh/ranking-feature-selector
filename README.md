@@ -302,6 +302,33 @@ selector = RobustSurvivalFeatureSelectorCV(
 
 When `importance_config={"method": "permutation", "scoring": "auto"}`, permutation importance is aligned with the optimization metric: log loss for classification, RMSE for regression, and C-index for survival.
 
+
+## Performance tuning
+
+When `selection_config["k_grid"]` is omitted, the package now uses an adaptive
+feature-count grid: exhaustive evaluation up to 20 features and progressively
+coarser spacing afterward. Supplying an explicit `k_grid` preserves exhaustive
+or custom behavior.
+
+For expensive estimators, the model used during nested-CV feature selection can
+be made lighter without changing the model used by `fit_final_model()`:
+
+```python
+selector = RobustRegressionFeatureSelectorCV(
+    model=RandomForestRegressor(n_estimators=500, random_state=42, n_jobs=-1),
+    max_features=60,
+    preset="safe",
+    selection_config={
+        "selection_model_params": {"n_estimators": 100},
+    },
+)
+```
+
+This keeps the leakage-safe nested-CV procedure intact while reducing the cost
+of the many repeated fits used to choose the feature count. For survival models
+using permutation importance, reducing `importance_config["n_repeats"]` during
+exploratory runs can provide an additional large speedup.
+
 ## Results
 
 After fitting:
