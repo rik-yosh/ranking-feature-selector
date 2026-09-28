@@ -331,3 +331,35 @@ def test_make_k_grid_is_dense_for_small_searches_and_sparse_for_large_searches()
     assert grid_100[-1] == 100
     assert 70 in grid_100
     assert len(grid_100) < 40
+
+
+def test_selection_model_params_are_applied_without_changing_final_model():
+    X_np, y_np = make_regression(
+        n_samples=40,
+        n_features=6,
+        n_informative=3,
+        random_state=21,
+    )
+    X = pd.DataFrame(X_np, columns=[f"x{i}" for i in range(X_np.shape[1])])
+    y = pd.Series(y_np)
+    model = RandomForestRegressor(n_estimators=12, random_state=21, min_samples_leaf=2)
+
+    selector = RobustRegressionFeatureSelectorCV(
+        model=model,
+        max_features=2,
+        preset="fast",
+        selection_config={
+            "k_grid": [1, 2],
+            "selection_model_params": {"n_estimators": 3},
+        },
+        importance_config={"method": "permutation", "n_repeats": 1},
+        random_state=21,
+        verbose=False,
+    )
+    selector.fit(X, y)
+
+    assert selector.result_.config["selection_config"]["selection_model_params"] == {
+        "n_estimators": 3
+    }
+    fitted = selector.fit_final_model(X, y)
+    assert fitted.model.n_estimators == 12
