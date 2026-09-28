@@ -180,10 +180,18 @@ def target_reset(y, task: str):
 
 
 def make_k_grid(n_features: int, max_k: Optional[int] = None) -> list[int]:
-    """Build a practical candidate grid for the number of selected features.
+    """Build an adaptive candidate grid for the number of selected features.
 
-    For small feature counts, all values are evaluated. For larger problems, the
-    grid is dense for small ``k`` and coarser afterward.
+    The grid stays exhaustive for small searches, where adjacent feature counts
+    are cheap to evaluate and can materially change the optimum. For larger
+    searches it is dense near small ``k`` and progressively coarser afterward.
+
+    Explicit user-supplied ``k_grid`` values bypass this helper entirely, so
+    existing workflows that require exhaustive evaluation remain unchanged.
+
+    Compared with the previous exhaustive 1..60 behavior, the adaptive grid cuts
+    the number of candidate model fits substantially while retaining the region
+    in which the one-standard-error rule most often selects parsimonious models.
     """
     if max_k is None:
         max_k = n_features
@@ -191,12 +199,20 @@ def make_k_grid(n_features: int, max_k: Optional[int] = None) -> list[int]:
     if max_k < 1:
         raise ValueError("max_k must be at least 1.")
 
-    if max_k <= 60:
+    # Small searches are cheap enough to evaluate exhaustively.
+    if max_k <= 20:
         return list(range(1, max_k + 1))
 
-    grid = set(range(1, 21))
-    grid.update(range(25, min(max_k, 100) + 1, 5))
-    grid.update(range(110, max_k + 1, 10))
+    grid = set(range(1, 11))
+    grid.update((12, 15, 20))
+
+    # Moderate feature counts get 5-feature resolution.
+    grid.update(range(25, min(max_k, 60) + 1, 5))
+
+    # Larger searches use 10-feature resolution.
+    if max_k > 60:
+        grid.update(range(70, max_k + 1, 10))
+
     grid.add(max_k)
     return sorted(k for k in grid if 1 <= k <= max_k)
 
