@@ -1061,6 +1061,7 @@ def nested_feature_selection_cv(
     selection_rule = sel_cfg.pop("selection_rule", sel_cfg.pop("choose_k_rule", "one_se"))
     optimization_metric = sel_cfg.pop("optimization_metric", None)
     k_grid = sel_cfg.pop("k_grid", None)
+    selection_model_params = sel_cfg.pop("selection_model_params", None)
     event_col = sel_cfg.pop("event_col", None)
     time_col = sel_cfg.pop("time_col", None)
     threshold = sel_cfg.pop("threshold", 0.5)
@@ -1090,6 +1091,22 @@ def nested_feature_selection_cv(
     if cv_cfg:
         raise ValueError(f"Unknown cv_config keys: {sorted(cv_cfg)}")
 
+    selection_model = model
+    if selection_model_params is not None:
+        if not isinstance(selection_model_params, dict):
+            raise TypeError("selection_model_params must be a dict of estimator parameters.")
+        base_selection_model = model
+        if base_selection_model is None:
+            base_selection_model = _default_model_for_task(task, random_state)
+        selection_model = clone(base_selection_model)
+        try:
+            selection_model.set_params(**selection_model_params)
+        except ValueError as exc:
+            raise ValueError(
+                "Invalid selection_model_params for the configured estimator: "
+                f"{selection_model_params}"
+            ) from exc
+
     used_cv_config = {
         "outer_splits": outer_splits,
         "inner_splits": inner_splits,
@@ -1103,6 +1120,7 @@ def nested_feature_selection_cv(
         "selection_rule": selection_rule,
         "optimization_metric": optimization_metric,
         "k_grid": k_grid,
+        "selection_model_params": selection_model_params,
         "threshold": threshold,
         "positive_class_index": positive_class_index,
         "event_col": event_col,
@@ -1126,7 +1144,7 @@ def nested_feature_selection_cv(
     result = nested_shap_feature_selection_cv(
         X=X,
         y=y,
-        model=model,
+        model=selection_model,
         task=task,
         imputer=prepared_preprocessor,
         sampler=sampler,
